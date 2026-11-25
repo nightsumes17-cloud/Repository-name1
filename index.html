@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>บะหมี่กึ่งสำเร็จรูป 006</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 15px; }
+    .box { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    input, textarea { width: 100%; padding: 8px; margin: 6px 0 12px; }
+    button { padding: 10px 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>🍜 บะหมี่กึ่งสำเร็จรูป (006)</h2>
+  <button onclick="show('shop')">หน้าร้าน</button>
+  <button onclick="show('ops')">หยิบของ & จ่าหน้าพัสดุ</button>
+
+  <div id="shop" class="box">
+    <h3>เลือกสินค้า (2 SKUs)</h3>
+    <p><img src="images.jpeg" width="120"> SKU-01 รสต้มยำกุ้ง (65 บ.) จำนวน: <input id="q1" type="number" value="1" min="0"></p>
+    <p><img src="20241225103844_24CF8A94-1872-4F53-8297-FCB3017D3821.png" width="120"> SKU-02 รสหมูสับ (60 บ.) จำนวน: <input id="q2" type="number" value="0" min="0"></p>
+    <form onsubmit="sendOrder(event)">
+      ชื่อลูกค้า: <input id="name" required>
+      เบอร์โทร: <input id="phone" required>
+      ที่อยู่จ่าหน้าพัสดุ: <textarea id="addr" required></textarea>
+      <button type="submit">สั่งซื้อ</button>
+    </form>
+    <p id="msg"></p>
+  </div>
+
+  <div id="ops" class="box" style="display:none;">
+    <h3>รายการหยิบของ & ใบจ่าหน้าพัสดุ</h3>
+    <button onclick="loadData()">รีเฟรช</button> <button onclick="window.print()">พิมพ์</button>
+    <div id="list">กำลังโหลด...</div>
+  </div>
+
+  <script>
+    const URL = 'https://script.google.com/macros/s/AKfycbxVrtybHnL3tW_fLGGJtQp1H2arlytJ5cqgVo6FKRhKMIA5ylbO20HjP3LuRR2obzhB/exec';
+    function show(t) {
+      shop.style.display = t === 'shop' ? 'block' : 'none';
+      ops.style.display = t === 'ops' ? 'block' : 'none';
+      if (t === 'ops') loadData();
+    }
+    async function sendOrder(e) {
+      e.preventDefault();
+      const s1 = +q1.value || 0, s2 = +q2.value || 0;
+      await fetch(URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+        customerName: name.value, phone: phone.value, address: addr.value,
+        sku1Qty: s1, sku2Qty: s2, totalPrice: s1 * 65 + s2 * 60
+      })});
+      msg.textContent = 'บันทึกคำสั่งซื้อแล้ว!';
+      e.target.reset();
+    }
+    async function loadData() {
+      const rows = await (await fetch(URL)).json();
+      list.innerHTML = rows.map(r => `
+        <div style="border:1px dashed #000; padding:10px; margin:10px 0;">
+          <b>${r['เลขออเดอร์'] || ''}</b> | สถานะ: ${r['สถานะ'] || ''}<br>
+          ผู้รับ: ${r['ชื่อลูกค้า'] || ''} (${r['เบอร์โทร'] || ''})<br>
+          ที่อยู่: ${r['ที่อยู่จ่าหน้าพัสดุ'] || ''}<br>
+          หยิบของ: SKU-01 = ${r['จำนวนSKUที่1'] || 0} | SKU-02 = ${r['จำนวนSKUที่2'] || 0} | รวม ${r['ราคารวม'] || 0} บ.
+        </div>
+      `).join('') || 'ยังไม่มีออเดอร์';
+    }
+  </script>
+</body>
+</html>
